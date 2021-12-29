@@ -41,10 +41,10 @@ COMMENDATIONS = [
 def get_schoolkid(schoolkid_name):
     try:
         schoolkid = Schoolkid.objects.get(full_name__contains=schoolkid_name)
-    except ObjectDoesNotExist:
+    except Schoolkid.ObjectDoesNotExist:
         print(f"Не найдено ученика с именем {schoolkid_name}")
-        exit()
-    except MultipleObjectsReturned:
+        return None
+    except Schoolkid.MultipleObjectsReturned:
         print(f"Найдено больше одного ученика с именем {schoolkid_name}")
         exit()
     return schoolkid
@@ -62,17 +62,19 @@ def delete_chastisements(schoolkid_name):
 
 def create_commendation(schoolkid_name, subject_name):
     schoolkid = get_schoolkid(schoolkid_name)
-    last_lesson = Lesson.objects.filter(
-        year_of_study=schoolkid.year_of_study,
-        group_letter=schoolkid.group_letter,
-        subject__title__contains=subject_name,
-    ).order_by('-date').first()
-
-    commendation_text = random.choice(COMMENDATIONS)
-    Commendation.objects.create(
-        text=commendation_text,
-        schoolkid=schoolkid,
-        subject=last_lesson.subject,
-        teacher=last_lesson.teacher,
-        created=last_lesson.date,
-    )
+    try:
+        last_lesson = Lesson.objects.filter(
+            year_of_study=schoolkid.year_of_study,
+            group_letter=schoolkid.group_letter,
+            subject__title__contains=subject_name,
+        ).order_by('-date').first()
+        commendation_text = random.choice(COMMENDATIONS)
+        Commendation.objects.create(
+            text=commendation_text,
+            schoolkid=schoolkid,
+            subject=last_lesson.subject,
+            teacher=last_lesson.teacher,
+            created=last_lesson.date,
+        )
+    except Lesson.ObjectDoesNotExist:
+        print (f"Нельзя создать похвалу. У ученика {schoolkid_name} нет уроков {subject_name}")
